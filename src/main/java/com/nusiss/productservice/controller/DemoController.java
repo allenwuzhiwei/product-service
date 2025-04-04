@@ -1,18 +1,31 @@
 package com.nusiss.productservice.controller;
 
 import com.nusiss.productservice.config.ApiResponse;
+import com.nusiss.productservice.dao.ProductMapper;
+import com.nusiss.productservice.entity.Product;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /*import java.util.List;
 import java.util.Optional;*/
 @RestController
 public class DemoController {
+    @Autowired
+    private ProductMapper productMapper;
+
+    @GetMapping("/products")
+    public List<Product> getAllProducts() {
+        return productMapper.selectList(null); // 查询全部商品
+    }
 
     @GetMapping("/test")
     public ResponseEntity<ApiResponse<String>> getAllUsers() {
         return ResponseEntity.ok(new ApiResponse<String>(true, "test successfully", ""));
     }
+
     /*@GetMapping
     public ResponseEntity<ApiResponse<List<User>>> getAllUsers() {
         List<User> users = userService.getAllUsers();
