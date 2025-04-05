@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /*
@@ -99,6 +100,31 @@ public class ProductController {
     public ResponseEntity<ApiResponse<List<Product>>> searchProducts(@RequestParam String keyword) {
         List<Product> result = productService.searchProducts(keyword); // 调用 service 进行搜索
         return ResponseEntity.ok(new ApiResponse<>(true, "Products matched successfully", result));
+    }
+
+    /*
+    扩展功能3 接口：多条件筛选产品接口(筛选支持单条件筛选，或者组合条件筛选)
+    支持根据名称、类别、状态、价格范围、最低评分进行高级筛选
+    @param name 产品名称
+    @param category 产品类别
+    @param status 产品状态
+    @param minPrice 最低价格
+    @param maxPrice 最高价格
+    @param rating 最低评分
+    @return 匹配的产品列表
+     */
+
+    @GetMapping("/filter")
+    public ResponseEntity<ApiResponse<List<Product>>> filterProducts(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(required = false) Double rating
+    ) {
+        List<Product> products = productService.filterProducts(name, category, status, minPrice, maxPrice, rating);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Products filtered successfully", products));
     }
 
 }

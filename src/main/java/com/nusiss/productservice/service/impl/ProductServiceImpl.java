@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -92,5 +93,57 @@ public class ProductServiceImpl implements ProductService {
         // 执行查询
         return productMapper.selectList(queryWrapper);
     }
+
+    // 扩展功能 3.多条件筛选功能
+    /*
+     根据多个条件筛选产品
+     (支持单条件筛选，或者组合条件筛选)
+     @param name 产品名称
+     @param category 产品类别
+     @param status 产品状态
+     @param minPrice 最低价格
+     @param maxPrice 最高价格
+     @param rating 产品评分
+     @return 匹配的产品列表
+     */
+    @Override
+    public List<Product> filterProducts(String name, String category, String status, BigDecimal minPrice, BigDecimal maxPrice, Double rating) {
+        // 使用 MyBatis Plus 提供的 QueryWrapper 构造动态查询条件
+        QueryWrapper<Product> wrapper = new QueryWrapper<>();
+
+        // 模糊查询 name（商品名称）
+        if (name != null && !name.isEmpty()) {
+            wrapper.like("name", name);
+        }
+
+        // 精确匹配 category（商品种类）
+        if (category != null && !category.isEmpty()) {
+            wrapper.eq("category", category);
+        }
+
+        // 精确匹配 status（商品状态）
+        if (status != null && !status.isEmpty()) {
+            wrapper.eq("status", status);
+        }
+
+        // 最低价格（大于等于）
+        if (minPrice != null) {
+            wrapper.ge("price", minPrice);
+        }
+
+        // 最高价格（小于等于）
+        if (maxPrice != null) {
+            wrapper.le("price", maxPrice);
+        }
+
+        // 评分（大于等于）
+        if (rating != null) {
+            wrapper.ge("rating", rating);
+        }
+
+        // 返回查询结果
+        return productMapper.selectList(wrapper);
+    }
+
 
 }
