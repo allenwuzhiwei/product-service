@@ -7,6 +7,7 @@ import java.util.List;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nusiss.productservice.entity.Product;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 
 
 public interface ProductService {
@@ -42,7 +43,7 @@ public interface ProductService {
      List<Product> searchProducts(String keyword);
 
      /*
-     2.多条件筛选功能 - 支持通过 name、category、status、minPrice、maxPrice、rating - 支持单条件筛选，或者组合条件筛选
+     3.多条件筛选功能 - 支持通过 name、category、status、minPrice、maxPrice、rating - 支持单条件筛选，或者组合条件筛选
      @param name 商品名称
      @param category 商品种类
      @param status 商品状态
@@ -53,4 +54,30 @@ public interface ProductService {
     */
      List<Product> filterProducts(String name, String category, String status, BigDecimal minPrice, BigDecimal maxPrice, Double rating);
 
+    /*
+    4.排序功能 - 支持根据指定字段进行升序/降序排序，可结合分页和筛选条件一起使用
+    @param name        商品名称（可选）
+    @param category    商品分类（可选）
+    @param status      商品状态（可选）
+    @param minPrice    最低价格（可选）
+    @param maxPrice    最高价格（可选）
+    @param rating      最低评分（可选）
+    @param sortBy      排序字段，例如 "price", "rating", "create_datetime"
+    @param order       排序顺序，"asc" 表示升序，"desc" 表示降序
+    @param page        当前页码，从1开始
+    @param size        每页条数
+    @return Page<Product> 分页+排序后的结果
+     */
+    IPage<Product> filterProductsWithSorting(
+            String name,
+            String category,
+            String status,
+            BigDecimal minPrice,
+            BigDecimal maxPrice,
+            Double rating,
+            String sortBy,
+            String order,
+            int page,
+            int size
+    );
 }

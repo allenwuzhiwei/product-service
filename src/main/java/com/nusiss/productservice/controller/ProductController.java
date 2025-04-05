@@ -1,5 +1,6 @@
 package com.nusiss.productservice.controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nusiss.productservice.config.ApiResponse;
 import com.nusiss.productservice.entity.Product;
@@ -126,5 +127,41 @@ public class ProductController {
         List<Product> products = productService.filterProducts(name, category, status, minPrice, maxPrice, rating);
         return ResponseEntity.ok(new ApiResponse<>(true, "Products filtered successfully", products));
     }
+
+    /*
+    扩展功能4 接口：排序功能（可组合分页和多条件筛选）
+     * @param name 商品名称（模糊搜索）
+     * @param category 商品分类
+     * @param status 商品状态（如 AVAILABLE / UNAVAILABLE）
+     * @param minPrice 最低价格
+     * @param maxPrice 最高价格
+     * @param rating 最低评分
+     * @param sortBy 排序字段（如 price, rating, create_datetime）
+     * @param order 排序方式（asc 或 desc）
+     * @param page 当前页码（从 1 开始）
+     * @param size 每页数量
+     * @return ApiResponse 分页后的商品结果
+     */
+    @GetMapping("/sort")
+    public ResponseEntity<ApiResponse<IPage<Product>>> filterProductsWithSorting(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(required = false) Double rating,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false) String order,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        IPage<Product> products = productService.filterProductsWithSorting(
+                name, category, status, minPrice, maxPrice, rating,
+                sortBy, order, page, size
+        );
+
+        return ResponseEntity.ok(new ApiResponse<>(true, "Products filtered successfully", products));
+    }
+
 
 }

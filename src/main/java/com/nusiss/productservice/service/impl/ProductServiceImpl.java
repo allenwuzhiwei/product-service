@@ -1,5 +1,6 @@
 package com.nusiss.productservice.service.impl;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.nusiss.productservice.dao.ProductMapper;
 import com.nusiss.productservice.entity.Product;
 import com.nusiss.productservice.service.ProductService;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -145,5 +147,61 @@ public class ProductServiceImpl implements ProductService {
         return productMapper.selectList(wrapper);
     }
 
+    // 扩展功能 4.排序功能 - 支持根据指定字段进行升序/降序排序，可结合分页和筛选条件一起使用
+    /*
+     排序 + 筛选 + 分页功能实现，使用 MyBatis Plus 的 QueryWrapper 构建动态查询条件
+     */
 
+    @Override
+    public IPage<Product> filterProductsWithSorting(
+            String name,           // 商品名称
+            String category,       // 商品分类
+            String status,         // 商品状态
+            BigDecimal minPrice,   // 最低价格
+            BigDecimal maxPrice,   // 最高价格
+            Double rating,         // 最低评分
+            String sortBy,         // 排序字段（如 price、rating、create_datetime）
+            String order,          // 排序方式（asc/desc）
+            int page,              // 当前页码
+            int size               // 每页条数
+    ) {
+        // 1. 构建分页对象，传入当前页码和每页数量
+        Page<Product> pageObj = new Page<>(page, size); //如page = 1，表示第一页,size = 10，表示每页查 10 条数据
+
+        // 2. 构建查询条件
+        QueryWrapper<Product> queryWrapper = new QueryWrapper<>(); //动态查询构造器
+
+        // 3. 动态添加筛选条件（字段不为空才添加）
+        if (StringUtils.hasText(name)) {
+            queryWrapper.like("name", name); //用户传了 name，就在 SQL 中添加 name LIKE '%name%' 条件。如果 name 非空，则模糊匹配商品名称。
+        }
+        if (StringUtils.hasText(category)) {
+            queryWrapper.eq("category", category);
+        }
+        if (StringUtils.hasText(status)) {
+            queryWrapper.eq("status", status); //如果 status 非空，则过滤状态为这个值的产品。
+        }
+        if (minPrice != null) {
+            queryWrapper.ge("price", minPrice); //如果 minPrice 非空，则过滤价格大于等于这个值的产品。
+        }
+        if (maxPrice != null) {
+            queryWrapper.le("price", maxPrice); //如果 maxPrice 非空，则过滤价格小于等于这个值的产品。
+        }
+        if (rating != null) {
+            queryWrapper.ge("rating", rating);
+        }
+
+        // 4. 排序逻辑（字段名必须存在于数据库表中）
+        if (StringUtils.hasText(sortBy)) {
+            boolean isAsc = "asc".equalsIgnoreCase(order); //判断 order 是否为 asc 大小写不敏感
+            if (isAsc) {
+                queryWrapper.orderByAsc(sortBy); //如果 order 为 asc，则按照升序排序。
+            } else {
+                queryWrapper.orderByDesc(sortBy); //如果 order 为 desc，则按照降序排序。
+            }
+        }
+
+        // 5. 执行分页查询并返回结果
+        return productMapper.selectPage(pageObj, queryWrapper);
+    }
 }
