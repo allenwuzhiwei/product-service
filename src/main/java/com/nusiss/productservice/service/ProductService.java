@@ -32,5 +32,11 @@ public interface ProductService {
     */
     Page<Product> getProductPage(int page, int size); // 添加分页功能，使用MyBatis Plus 提供的的分页工具类
 
+     /*
+    2.关键词搜索功能 - 根据关键词搜索产品，匹配 name 和 description 字段
+     @param keyword 搜索关键词
+     @return 匹配的产品列表
+    */
+     List<Product> searchProducts(String keyword);
 
 }

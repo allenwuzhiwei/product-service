@@ -69,4 +69,28 @@ public class ProductServiceImpl implements ProductService {
         QueryWrapper<Product> queryWrapper = new QueryWrapper<>(); // 可以后续添加搜索条件
         return productMapper.selectPage(pageRequest, queryWrapper); // 执行分页查询
     }
+
+    // 扩展功能 2.关键词搜索功能
+    /*
+     根据关键词搜索产品，模糊匹配 name 和 description 字段
+     @param keyword 搜索关键词
+     @return 匹配的产品列表
+     */
+
+    @Override
+    public List<Product> searchProducts(String keyword) {
+        // 构造查询条件
+        //QueryWrapper 是 MyBatis Plus 提供的一个工具类，用于构建 SQL 查询条件
+        QueryWrapper<Product> queryWrapper = new QueryWrapper<>();
+        //创建了一个 QueryWrapper 对象，专门用于 Product 实体类。这个 queryWrapper 将用于添加查询条件。
+        queryWrapper.lambda() //lambda() 方法返回一个支持 Lambda 表达式的查询构造器。
+                // lambda() 方法返回一个支持 Lambda 表达式的查询构造器。
+                .like(Product::getName, keyword) //Product::getName 是一个方法引用，指向 Product 类中的 getName() 方法。 keyword 是希望匹配的字符串。
+                .or() //如果上一个条件（模糊匹配 name 字段）不满足，查询将继续检查下一个条件
+                .like(Product::getDescription, keyword); //匹配description字段，检查 Product 实体中 description 字段是否包含 keyword查 Product 实体中 description 字段是否包含 keyword，
+
+        // 执行查询
+        return productMapper.selectList(queryWrapper);
+    }
+
 }

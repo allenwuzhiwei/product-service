@@ -88,4 +88,17 @@ public class ProductController {
         Page<Product> resultPage = productService.getProductPage(page, size);
         return ResponseEntity.ok(new ApiResponse<>(true, "Paged products retrieved successfully", resultPage));
     }
+
+    /*
+    扩展功能2 接口：关键词搜索产品接口
+    支持根据产品名称或描述进行模糊搜索
+    @param keyword 关键词
+    @return 匹配的产品列表
+     */
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<List<Product>>> searchProducts(@RequestParam String keyword) {
+        List<Product> result = productService.searchProducts(keyword); // 调用 service 进行搜索
+        return ResponseEntity.ok(new ApiResponse<>(true, "Products matched successfully", result));
+    }
+
 }
