@@ -1,5 +1,6 @@
 package com.nusiss.productservice.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -13,7 +14,7 @@ import java.time.LocalDateTime;
 @TableName("ProductMedia")
 public class ProductMedia {
 
-    @TableId
+    @TableId(value = "id", type = IdType.AUTO)
     private Long id; // 主键ID
 
     private Long productId; // 关联的产品ID
