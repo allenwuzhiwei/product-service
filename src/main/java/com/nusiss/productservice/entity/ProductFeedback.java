@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
  对应数据库中的 product_feedback 表，用于存储用户对商品的反馈信息（评论与评分）
  */
 @Data
-@TableName("product_feedback")
+@TableName("ProductFeedback")
 public class ProductFeedback {
 
     @TableId(value = "id", type = IdType.AUTO) // 主键自增
