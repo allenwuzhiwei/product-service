@@ -1,8 +1,11 @@
 
 package com.nusiss.productservice.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nusiss.productservice.dao.ProductFeedbackMapper;
 import com.nusiss.productservice.entity.ProductFeedback;
 import com.nusiss.productservice.service.ProductFeedbackService;
@@ -117,5 +120,44 @@ public class ProductFeedbackServiceImpl implements ProductFeedbackService {
 
     }
 
+    /*
+     扩展功能 3：根据产品 ID 获取反馈（支持分页 + 排序）
+
+     @param productId 产品 ID
+     @param page 当前页码（从 1 开始）
+     @param size 每页数量
+     @param sortBy 排序字段，例如 "rating", "create_datetime"
+     @param order 排序方式，"asc" 表示升序，"desc" 表示降序
+     @return 分页后的反馈记录
+     */
+    @Override
+    public IPage<ProductFeedback> getFeedbackByProductIdWithPageAndSort(Long productId, int page, int size, String sortBy, String order) {
+        // 构建分页对象，注意页码从 1 开始
+        Page<ProductFeedback> pageRequest = new Page<>(page, size); // 创建分页对象
+
+        // 构建查询条件
+        LambdaQueryWrapper<ProductFeedback> wrapper = new LambdaQueryWrapper<>(); // 动态查询构造器
+        wrapper.eq(ProductFeedback::getProductId, productId); // 按产品 ID 筛选
+
+        // 设置排序字段
+        // 根据 sortBy 和 order 参数设置排序规则
+        if (sortBy != null && !sortBy.isEmpty()) {
+            boolean isAsc = "asc".equalsIgnoreCase(order); // 判断 order 是否为 asc 大小写不敏感
+            // 支持的排序字段
+            switch (sortBy) {
+                case "rating": // 按评分排序
+                    wrapper.orderBy(true, isAsc, ProductFeedback::getRating); // 如果 order 为 asc，则按照升序排序。
+                    break;
+                case "create_datetime": // 按创建时间排序
+                    wrapper.orderBy(true, isAsc, ProductFeedback::getCreateDatetime); // 如果 order 为 asc，则按照升序排序。
+                    break;
+                default:
+                    // 如果传了非法字段，可以不排序或抛异常/警告（这里默认不排序）
+                    break;
+            }
+        }
+
+        return productFeedbackMapper.selectPage(pageRequest, wrapper);
+    }
 }
 
