@@ -1,5 +1,6 @@
 package com.nusiss.productservice.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.nusiss.productservice.entity.ProductFeedback;
 
 import java.util.List;
@@ -66,5 +67,17 @@ public interface ProductFeedbackService {
      @return 评论数（int）
      */
     int getCommentCountByProductId(Long productId);
+
+    /*
+     扩展功能 3：根据产品 ID 获取反馈（支持分页 + 排序）
+
+     @param productId 产品 ID
+     @param page 当前页码（从 1 开始）
+     @param size 每页数量
+     @param sortBy 排序字段，例如 "rating", "create_datetime"
+     @param order 排序方式，"asc" 表示升序，"desc" 表示降序
+     @return 分页后的反馈记录
+     */
+    IPage<ProductFeedback> getFeedbackByProductIdWithPageAndSort(Long productId, int page, int size, String sortBy, String order);
 
 }
