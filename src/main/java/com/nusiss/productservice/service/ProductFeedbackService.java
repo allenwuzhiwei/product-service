@@ -52,6 +52,7 @@ public interface ProductFeedbackService {
     boolean deleteFeedback(Long id);
 
     /*
+     扩展功能1：
      获取某个产品的平均评分
      @param productId 产品 ID
      @return 平均评分（若无评分记录返回 null）
@@ -59,6 +60,7 @@ public interface ProductFeedbackService {
     Double getAverageRatingByProductId(Long productId);
 
     /*
+     扩展功能2：
      获取某个产品的评论数量
      @param productId 产品 ID
      @return 评论数（int）

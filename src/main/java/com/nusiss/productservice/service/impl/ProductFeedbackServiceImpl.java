@@ -80,5 +80,10 @@ public class ProductFeedbackServiceImpl implements ProductFeedbackService {
     public boolean deleteFeedback(Long id) {
         return productFeedbackMapper.deleteById(id) > 0;
     }
+
+    /*
+     扩展功能：获取某个产品的平均评分
+     */
+
 }
 
