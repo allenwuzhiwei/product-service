@@ -98,4 +98,27 @@ public class ProductFeedbackController {
             return ResponseEntity.status(404).body(new ApiResponse<>(false, "Feedback not found", null));
         }
     }
+
+    /*
+     扩展功能1 ：获取某个产品的平均评分
+     @param productId 产品 ID
+     @return 平均评分（double），若没有评分记录则返回 null
+     */
+    @GetMapping("/average-rating")
+    public ResponseEntity<ApiResponse<Double>> getAverageRating(@RequestParam Long productId) {
+        Double averageRating = feedbackService.getAverageRatingByProductId(productId);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Average rating retrieved successfully", averageRating));
+    }
+
+    /*
+     扩展功能2 ：获取某个产品的评论数
+     @param productId 产品 ID
+     @return 评论数（int）
+     */
+    @GetMapping("/comment-count")
+    public ResponseEntity<ApiResponse<Integer>> getCommentCount(@RequestParam Long productId) {
+        int commentCount = feedbackService.getCommentCountByProductId(productId);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Comment count retrieved successfully", commentCount));
+    }
+
 }
