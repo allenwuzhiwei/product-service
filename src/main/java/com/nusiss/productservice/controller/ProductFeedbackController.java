@@ -1,5 +1,6 @@
 package com.nusiss.productservice.controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.nusiss.productservice.config.ApiResponse;
 import com.nusiss.productservice.entity.ProductFeedback;
 import com.nusiss.productservice.service.ProductFeedbackService;
@@ -119,6 +120,35 @@ public class ProductFeedbackController {
     public ResponseEntity<ApiResponse<Integer>> getCommentCount(@RequestParam Long productId) {
         int commentCount = feedbackService.getCommentCountByProductId(productId);
         return ResponseEntity.ok(new ApiResponse<>(true, "Comment count retrieved successfully", commentCount));
+    }
+
+    /*
+     扩展功能 3：根据产品 ID 获取反馈（分页 + 排序）
+     支持分页参数 page 和 size，排序参数 sortBy（如 rating、create_datetime），order（asc 或 desc）
+
+     @param productId 产品 ID
+     @param page 当前页码（默认 1）
+     @param size 每页数量（默认 10）
+     @param sortBy 排序字段（可选："rating"、"create_datetime"）
+     @param order 排序方式（可选："asc"、"desc"）
+     @return 分页后的反馈列表
+    */
+    @GetMapping("/by-product") // /feedback/by-product?productId=1&page=1&size=10&sortBy=rating&order=desc
+    public ResponseEntity<ApiResponse<IPage<ProductFeedback>>> getFeedbackByProductIdWithPageAndSort //
+    (
+            @RequestParam Long productId,                        // 必填：产品 ID
+            @RequestParam(defaultValue = "1") int page,          // 可选：页码，默认从第 1 页开始
+            @RequestParam(defaultValue = "10") int size,         // 可选：每页记录数，默认显示 10 条
+            @RequestParam(required = false) String sortBy,       // 可选：排序字段，如 rating、create_datetime
+            @RequestParam(required = false) String order         // 可选：排序方式，asc（升序）或 desc（降序）
+    )
+    {
+        // 调用 Service 方法，根据产品 ID 分页查询评论，同时应用排序逻辑
+        IPage<ProductFeedback> feedbackPage = feedbackService.getFeedbackByProductIdWithPageAndSort(
+                productId, page, size, sortBy, order
+        );
+        // 使用统一响应封装返回成功数据
+        return ResponseEntity.ok(new ApiResponse<>(true, "Feedbacks retrieved successfully", feedbackPage));
     }
 
 }
