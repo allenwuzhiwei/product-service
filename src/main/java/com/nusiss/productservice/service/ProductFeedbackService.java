@@ -50,4 +50,19 @@ public interface ProductFeedbackService {
      @return 是否删除成功
      */
     boolean deleteFeedback(Long id);
+
+    /*
+     获取某个产品的平均评分
+     @param productId 产品 ID
+     @return 平均评分（若无评分记录返回 null）
+     */
+    Double getAverageRatingByProductId(Long productId);
+
+    /*
+     获取某个产品的评论数量
+     @param productId 产品 ID
+     @return 评论数（int）
+     */
+    int getCommentCountByProductId(Long productId);
+
 }
