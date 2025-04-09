@@ -2,11 +2,13 @@
 package com.nusiss.productservice.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.nusiss.productservice.dao.ProductFeedbackMapper;
 import com.nusiss.productservice.entity.ProductFeedback;
 import com.nusiss.productservice.service.ProductFeedbackService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 
 import java.util.List;
 
@@ -82,8 +84,38 @@ public class ProductFeedbackServiceImpl implements ProductFeedbackService {
     }
 
     /*
-     扩展功能：获取某个产品的平均评分
+     扩展功能1 ：获取某个产品的平均评分
      */
+    @Override
+    public Double getAverageRatingByProductId(Long productId) {
+        // 使用 MyBatis Plus 提供的 lambdaQuery 构建查询条件
+        List<ProductFeedback> feedbackList = productFeedbackMapper
+                .selectList(Wrappers.<ProductFeedback>lambdaQuery()
+                        .eq(ProductFeedback::getProductId, productId)
+                        .isNotNull(ProductFeedback::getRating)); // 过滤掉空评分记录
+
+        if (feedbackList == null || feedbackList.isEmpty()) {
+            return null; // 如果没有评分记录，返回 null
+        }
+        // 计算平均值
+        double sum = feedbackList.stream()
+                .mapToDouble(ProductFeedback::getRating)
+                .sum();
+        return sum / feedbackList.size();
+    }
+
+    /*
+     扩展功能2 ：获取某个产品的评论数
+     */
+    @Override
+    public int getCommentCountByProductId(Long productId) {
+        // 统计该产品的反馈总数（即评论数）
+        return productFeedbackMapper.selectCount(
+                Wrappers.<ProductFeedback>lambdaQuery()
+                        .eq(ProductFeedback::getProductId, productId)
+        ).intValue();
+
+    }
 
 }
 
