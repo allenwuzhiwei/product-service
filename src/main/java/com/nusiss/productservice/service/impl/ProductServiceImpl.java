@@ -1,8 +1,11 @@
 package com.nusiss.productservice.service.impl;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.nusiss.productservice.dao.ProductMapper;
+import com.nusiss.productservice.dao.ProductMediaMapper;
 import com.nusiss.productservice.entity.Product;
+import com.nusiss.productservice.entity.ProductMedia;
 import com.nusiss.productservice.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,13 +26,17 @@ public class ProductServiceImpl implements ProductService {
     // 查询所有商品
     @Override
     public List<Product> getAllProducts() {
-        return productMapper.selectList(null);
+        List<Product> list = productMapper.selectList(null);
+        setCoverImages(list); // 设置封面图
+        return list;
     }
 
     // 根据id查询商品
     @Override
     public Product getProductById(Long id) {
-        return productMapper.selectById(id);
+        Product product = productMapper.selectById(id);
+        setCoverImage(product); // 设置封面图
+        return product;
     }
 
     // 创建商品
@@ -69,8 +76,9 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public Page<Product> getProductPage(int page, int size) {
         Page<Product> pageRequest = new Page<>(page, size); // 创建分页对象
-        QueryWrapper<Product> queryWrapper = new QueryWrapper<>(); // 可以后续添加搜索条件
-        return productMapper.selectPage(pageRequest, queryWrapper); // 执行分页查询
+        Page<Product> result = productMapper.selectPage(pageRequest, new QueryWrapper<>());
+        setCoverImages(result.getRecords()); // 设置封面图
+        return result;
     }
 
     // 扩展功能 2.关键词搜索功能
@@ -93,7 +101,9 @@ public class ProductServiceImpl implements ProductService {
                 .like(Product::getDescription, keyword); //匹配description字段，检查 Product 实体中 description 字段是否包含 keyword查 Product 实体中 description 字段是否包含 keyword，
 
         // 执行查询
-        return productMapper.selectList(queryWrapper);
+        List<Product> list = productMapper.selectList(queryWrapper);
+        setCoverImages(list); // 设置封面图
+        return list;
     }
 
     // 扩展功能 3.多条件筛选功能
@@ -144,7 +154,9 @@ public class ProductServiceImpl implements ProductService {
         }
 
         // 返回查询结果
-        return productMapper.selectList(wrapper);
+        List<Product> list = productMapper.selectList(wrapper);
+        setCoverImages(list); // 设置封面图
+        return list;
     }
 
     // 扩展功能 4.排序功能 - 支持根据指定字段进行升序/降序排序，可结合分页和筛选条件一起使用
@@ -202,6 +214,39 @@ public class ProductServiceImpl implements ProductService {
         }
 
         // 5. 执行分页查询并返回结果
-        return productMapper.selectPage(pageObj, queryWrapper);
+        IPage<Product> result = productMapper.selectPage(pageObj, queryWrapper);
+        setCoverImages(result.getRecords()); // 设置封面图
+        return result;
+    }
+
+    /*
+     给每个 Product 对象设置封面图 URL（即该产品的第一张图片）
+     */
+    @Autowired
+    private ProductMediaMapper productMediaMapper; // 注入 ProductMediaMapper 用于查询封面图
+
+    // 工具方法：为某个 Product 设置封面图（第一张图片类型 media）
+    private void setCoverImage(Product product) {
+        if (product != null && product.getId() != null) {
+            ProductMedia media = productMediaMapper.selectOne(
+                    Wrappers.<ProductMedia>lambdaQuery()
+                            .eq(ProductMedia::getProductId, product.getId())
+                            .eq(ProductMedia::getMediaType, "image")
+                            .orderByAsc(ProductMedia::getId)
+                            .last("LIMIT 1")
+            );
+            if (media != null) {
+                product.setCoverImageUrl(media.getUrl());
+            }
+        }
+    }
+
+    // 工具方法：为多个 Product 设置封面图
+    private void setCoverImages(List<Product> products) {
+        if (products != null) {
+            for (Product product : products) {
+                setCoverImage(product);
+            }
+        }
     }
 }

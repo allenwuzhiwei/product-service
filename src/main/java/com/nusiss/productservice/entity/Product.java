@@ -1,6 +1,7 @@
 package com.nusiss.productservice.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import jakarta.persistence.Column;
@@ -37,4 +38,18 @@ public class Product {
     private LocalDateTime updateDatetime;
     private String createUser;
     private String updateUser;
+
+    /*
+     封面图 URL（从 ProductMedia 中动态查询）
+     */
+    @TableField(exist = false)
+    private String coverImageUrl;
+
+    public String getCoverImageUrl() {
+        return coverImageUrl;
+    }
+
+    public void setCoverImageUrl(String coverImageUrl) {
+        this.coverImageUrl = coverImageUrl;
+    }
 }
