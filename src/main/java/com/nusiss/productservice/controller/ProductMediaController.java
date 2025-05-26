@@ -1,13 +1,20 @@
 package com.nusiss.productservice.controller;
 
 import com.nusiss.productservice.config.ApiResponse;
+import com.nusiss.productservice.dao.ProductMapper;
 import com.nusiss.productservice.entity.ProductMedia;
 import com.nusiss.productservice.service.ProductMediaService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 /*
  提供 ProductMedia 的 REST 接口
@@ -16,11 +23,71 @@ import java.util.List;
 @RequestMapping("/media")
 public class ProductMediaController {
 
+    /*
+    注入 ProductMapper，用于检查productId是否存在
+    */
+    @Autowired
+    private ProductMapper productMapper;
+
     @Autowired
     private ProductMediaService productMediaService;
 
+    @Value("${file.access.host}") // 从配置文件中读取文件访问主机地址
+    private String fileAccessHost;
+
     /*
-     创建媒体记录
+    思路：接收 MultipartFile（文件上传）+ productId → 生成 URL → 写入数据库
+    创建媒体记录,使用上传图片生成的URL，并保存到数据库中
+    @param productId 商品ID，必须已存在于 products 表中
+    @param file      上传的图片文件
+    @return 上传并创建成功的 ProductMedia 对象
+     */
+    @PostMapping("/uploadWithSave")
+    public ApiResponse<ProductMedia> uploadAndSaveMedia(@RequestParam("productId") Long productId,
+                                                        @RequestParam("file") MultipartFile file) {
+        try {
+            // Step 1: 验证商品是否存在
+            if (productMapper.selectById(productId) == null) {
+                return ApiResponse.fail("商品不存在，productId 无效");
+            }
+
+            // Step 2: 保存文件到resource文件夹下面的upload file目录中
+            String originalFilename = file.getOriginalFilename();
+            String suffix = originalFilename.substring(originalFilename.lastIndexOf("."));
+            String newFileName = UUID.randomUUID().toString() + suffix;
+
+            // 使用项目路径拼接保存目录
+            String projectRootPath = System.getProperty("user.dir");
+            String uploadDir = projectRootPath + "/src/main/resources/static/uploadFile";
+
+            File dest = new File(uploadDir, newFileName);
+            file.transferTo(dest);
+
+            // Step 3: 构建 URL
+            String url = fileAccessHost + "/uploadFile/" + newFileName;
+
+            // Step 4: 创建媒体记录
+            ProductMedia media = new ProductMedia();
+            media.setProductId(productId);
+            media.setMediaType("image");
+            media.setUrl(url);
+            media.setCreateUser("system");
+            media.setUpdateUser("system");
+            media.setCreateDatetime(LocalDateTime.now());
+            media.setUpdateDatetime(LocalDateTime.now());
+
+            productMediaService.createProductMedia(media);
+
+            return ApiResponse.success(media);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ApiResponse.fail("文件上传或保存失败：" + e.getMessage());
+        }
+    }
+
+
+    /*
+     创建媒体记录(已有 URL 的媒体手动插入,使用外链图片)
      @param media 媒体对象
      @return 创建成功的媒体信息
      */
@@ -63,7 +130,7 @@ public class ProductMediaController {
     }
 
     /*
-     更新媒体记录
+     更新媒体记录，用于外部链接图片的插入更新
      @param media 要更新的媒体对象
      @return 更新是否成功
      */
