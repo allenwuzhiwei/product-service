@@ -140,6 +140,54 @@ public class ProductMediaController {
         return ResponseEntity.ok(new ApiResponse<>(updated, updated ? "Media updated" : "Update failed", updated));
     }
 
+    @PutMapping("/replaceImage")
+    public ApiResponse<ProductMedia> replaceProductImage(@RequestParam("mediaId") Long mediaId,
+                                                         @RequestParam("file") MultipartFile file) {
+        try {
+            // 1. 查询旧媒体记录
+            ProductMedia existing = productMediaService.getProductMediaById(mediaId);
+            if (existing == null) {
+                return ApiResponse.fail("未找到对应的媒体记录");
+            }
+
+            // 2. 删除旧文件
+            String oldUrl = existing.getUrl();
+            int lastSlash = oldUrl.lastIndexOf('/');
+            String oldFileName = oldUrl.substring(lastSlash + 1);
+            String projectRoot = System.getProperty("user.dir");
+            String oldFilePath = projectRoot + "/src/main/resources/static/uploadFile/" + oldFileName;
+            File oldFile = new File(oldFilePath);
+            if (oldFile.exists()) {
+                oldFile.delete();
+            }
+
+            // 3. 保存新文件
+            String originalName = file.getOriginalFilename();
+            String suffix = originalName.substring(originalName.lastIndexOf("."));
+            String newFileName = UUID.randomUUID().toString() + suffix;
+            String uploadDir = projectRoot + "/src/main/resources/static/uploadFile";
+            File dest = new File(uploadDir, newFileName);
+            file.transferTo(dest);
+
+            // 4. 构建新 URL 并更新记录
+            String newUrl = fileAccessHost + "/uploadFile/" + newFileName;
+            existing.setUrl(newUrl);
+            existing.setUpdateDatetime(LocalDateTime.now());
+            existing.setUpdateUser("system");
+
+            boolean updated = productMediaService.updateProductMedia(existing);
+            if (updated) {
+                return ApiResponse.success(existing);
+            } else {
+                return ApiResponse.fail("数据库更新失败");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ApiResponse.fail("替换图片失败：" + e.getMessage());
+        }
+    }
+
+
     /*
      删除媒体记录
      @param id 媒体 ID
