@@ -8,10 +8,11 @@ import com.nusiss.productservice.service.ProductMediaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
 import java.util.List;
 
-/**
- * ProductMediaService 的实现类
+/*
+ ProductMediaService 的实现类
  */
 @Service
 public class ProductMediaServiceImpl implements ProductMediaService {
@@ -62,7 +63,7 @@ public class ProductMediaServiceImpl implements ProductMediaService {
     }
 
     /*
-     更新媒体信息
+     更新媒体信息（用于外部图片URL的使用）
      @param media 包含更新信息的 ProductMedia 对象
      @return 更新成功返回 true，失败返回 false
      */
@@ -72,12 +73,40 @@ public class ProductMediaServiceImpl implements ProductMediaService {
     }
 
     /*
-     根据 ID 删除媒体记录
-     @param id 媒体 ID
-     @return 删除成功返回 true，失败返回 false
-     */
+    根据 ID 删除媒体记录，同时删除本地图片文件
+    @param id 媒体 ID
+    @return 删除成功返回 true，失败返回 false
+    */
     @Override
     public boolean deleteProductMedia(Long id) {
+        // 1. 查询媒体记录，获取 URL
+        ProductMedia media = productMediaMapper.selectById(id);
+        if (media == null) {
+            return false;
+        }
+
+        // 2. 提取图片文件名
+        String url = media.getUrl();
+        int lastSlashIndex = url.lastIndexOf('/');
+        String fileName = url.substring(lastSlashIndex + 1); // 例：abc123.png
+
+        // 3. 拼接本地路径
+        String projectRootPath = System.getProperty("user.dir");
+        String filePath = projectRootPath + "/src/main/resources/static/uploadFile/" + fileName;
+
+        // 4. 删除本地图片文件
+        File file = new File(filePath);
+        if (file.exists()) {
+            boolean deleted = file.delete();
+            if (!deleted) {
+                System.err.println("警告：图片文件删除失败：" + filePath);
+            }
+        } else {
+            System.err.println("警告：图片文件不存在，跳过删除：" + filePath);
+        }
+
+        // 5. 删除数据库记录
         return productMediaMapper.deleteById(id) > 0;
     }
+
 }
