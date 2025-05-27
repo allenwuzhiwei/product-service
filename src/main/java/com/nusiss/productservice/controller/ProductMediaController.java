@@ -11,6 +11,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+
 import java.io.File;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,6 +26,9 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/media")
 public class ProductMediaController {
+
+    //  创建日志记录器
+    private static final Logger logger = LoggerFactory.getLogger(ProductMediaController.class);
 
     /*
     注入 ProductMapper，用于检查productId是否存在
@@ -79,10 +86,12 @@ public class ProductMediaController {
             productMediaService.createProductMedia(media);
 
             return ApiResponse.success(media);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ApiResponse.fail("文件上传或保存失败：" + e.getMessage());
         }
+        catch (Exception e) {
+            logger.error("xxx失败", e);
+            return ApiResponse.fail("xxx失败：" + e.getMessage());
+        }
+
     }
 
 
@@ -181,8 +190,9 @@ public class ProductMediaController {
             } else {
                 return ApiResponse.fail("数据库更新失败");
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        }
+        catch (Exception e) {
+            logger.error("替换图片失败", e);
             return ApiResponse.fail("替换图片失败：" + e.getMessage());
         }
     }

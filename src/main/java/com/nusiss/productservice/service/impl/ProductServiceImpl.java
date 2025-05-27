@@ -2,6 +2,7 @@ package com.nusiss.productservice.service.impl;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.nusiss.productservice.config.ApiResponse;
 import com.nusiss.productservice.dao.ProductMapper;
 import com.nusiss.productservice.dao.ProductMediaMapper;
 import com.nusiss.productservice.entity.Product;
@@ -13,7 +14,6 @@ import org.springframework.stereotype.Service;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.springframework.util.StringUtils;
-
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -23,6 +23,44 @@ public class ProductServiceImpl implements ProductService {
     @Autowired
     private ProductMapper productMapper;
 
+    /*弃用定时任务
+    private final RestTemplate restTemplate = new RestTemplate(); // 简单远程调用
+
+    @Scheduled(fixedRate = 300000) // 每 5 分钟执行一次（单位：毫秒）
+    public void syncStockFromInventory() {
+        System.out.println(" [定时任务] 开始同步库存数据...");
+
+        List<Product> allProducts = productMapper.selectList(null);
+        for (Product product : allProducts) {
+            Long productId = product.getId();
+            String url = "http://127.0.0.1:8080/inventories/inventory/quantity/" + productId;
+
+            try {
+                ResponseEntity<ApiResponse<Integer>> response = restTemplate.exchange(
+                        url,
+                        HttpMethod.GET,
+                        null,
+                        new ParameterizedTypeReference<ApiResponse<Integer>>() {}
+                );
+
+                if (response.getBody() != null && Boolean.TRUE.equals(response.getBody().isSuccess())) {
+                    Integer quantity = response.getBody().getData();
+                    if (quantity != null) {
+                        product.setStock(quantity);
+                        productMapper.updateById(product);
+                        System.out.println("已更新商品 " + productId + " 的库存为 " + quantity);
+                    }
+                } else {
+                    System.err.println("错误: 商品 " + productId + " 的库存响应格式无效");
+                }
+            } catch (Exception e) {
+                System.err.println("未能获取商品 " + productId + " 的库存失败：" + e.getMessage());
+            }
+        }
+
+        System.out.println("[完成定时任务] 库存同步完成！");
+    }
+*/
     // 查询所有商品
     @Override
     public List<Product> getAllProducts() {
