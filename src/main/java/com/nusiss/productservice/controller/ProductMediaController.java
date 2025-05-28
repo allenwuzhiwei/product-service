@@ -171,7 +171,10 @@ public class ProductMediaController {
             String oldFilePath = projectRoot + "/src/main/resources/static/uploadFile/" + oldFileName;
             File oldFile = new File(oldFilePath);
             if (oldFile.exists()) {
-                oldFile.delete();
+                boolean deleted = oldFile.delete();
+                if (!deleted) {
+                    return ApiResponse.fail("删除旧图片文件失败");
+                }
             }
 
             // 3. 保存新文件
