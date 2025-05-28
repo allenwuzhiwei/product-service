@@ -6,7 +6,7 @@ import com.nusiss.productservice.entity.ProductMedia;
 import com.nusiss.productservice.service.ProductMediaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ClassPathResource;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -60,7 +60,11 @@ public class ProductMediaController {
 
             // Step 2: 保存文件到resource文件夹下面的upload file目录中
             String originalFilename = file.getOriginalFilename();
+            if (originalFilename == null || !originalFilename.contains(".")) {
+                return ApiResponse.fail("上传失败：文件名为空或格式不合法");
+            }
             String suffix = originalFilename.substring(originalFilename.lastIndexOf("."));
+
             String newFileName = UUID.randomUUID().toString() + suffix;
 
             // 使用项目路径拼接保存目录
@@ -172,7 +176,11 @@ public class ProductMediaController {
 
             // 3. 保存新文件
             String originalName = file.getOriginalFilename();
+            if (originalName == null || !originalName.contains(".")) {
+                return ApiResponse.fail("上传失败：文件名为空或格式不合法");
+            }
             String suffix = originalName.substring(originalName.lastIndexOf("."));
+
             String newFileName = UUID.randomUUID().toString() + suffix;
             String uploadDir = projectRoot + "/src/main/resources/static/uploadFile";
             File dest = new File(uploadDir, newFileName);
