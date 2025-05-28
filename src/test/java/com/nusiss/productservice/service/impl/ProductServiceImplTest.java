@@ -9,10 +9,9 @@ import com.nusiss.productservice.entity.ProductMedia;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
-import org.springframework.util.StringUtils;
+
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -174,8 +173,8 @@ class ProductServiceImplTest {
 
 
     @Test
-    void testSetCoverImages_EmptyList() {
-        productService.getAllProducts(); // mock will return populated list
-        // nothing to assert if no error thrown
+    void testGetProductsPage_default() {
+        assertDoesNotThrow(() -> productService.getAllProducts());
     }
+
 }
