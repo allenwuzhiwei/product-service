@@ -2,7 +2,6 @@ package com.nusiss.productservice.service.impl;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.nusiss.productservice.config.ApiResponse;
 import com.nusiss.productservice.dao.ProductMapper;
 import com.nusiss.productservice.dao.ProductMediaMapper;
 import com.nusiss.productservice.entity.Product;
@@ -15,6 +14,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.springframework.util.StringUtils;
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -23,44 +23,6 @@ public class ProductServiceImpl implements ProductService {
     @Autowired
     private ProductMapper productMapper;
 
-    /*弃用定时任务
-    private final RestTemplate restTemplate = new RestTemplate(); // 简单远程调用
-
-    @Scheduled(fixedRate = 300000) // 每 5 分钟执行一次（单位：毫秒）
-    public void syncStockFromInventory() {
-        System.out.println(" [定时任务] 开始同步库存数据...");
-
-        List<Product> allProducts = productMapper.selectList(null);
-        for (Product product : allProducts) {
-            Long productId = product.getId();
-            String url = "http://127.0.0.1:8080/inventories/inventory/quantity/" + productId;
-
-            try {
-                ResponseEntity<ApiResponse<Integer>> response = restTemplate.exchange(
-                        url,
-                        HttpMethod.GET,
-                        null,
-                        new ParameterizedTypeReference<ApiResponse<Integer>>() {}
-                );
-
-                if (response.getBody() != null && Boolean.TRUE.equals(response.getBody().isSuccess())) {
-                    Integer quantity = response.getBody().getData();
-                    if (quantity != null) {
-                        product.setStock(quantity);
-                        productMapper.updateById(product);
-                        System.out.println("已更新商品 " + productId + " 的库存为 " + quantity);
-                    }
-                } else {
-                    System.err.println("错误: 商品 " + productId + " 的库存响应格式无效");
-                }
-            } catch (Exception e) {
-                System.err.println("未能获取商品 " + productId + " 的库存失败：" + e.getMessage());
-            }
-        }
-
-        System.out.println("[完成定时任务] 库存同步完成！");
-    }
-*/
     // 查询所有商品
     @Override
     public List<Product> getAllProducts() {
@@ -126,21 +88,28 @@ public class ProductServiceImpl implements ProductService {
      @return 匹配的产品列表
      */
 
+    /**
+     * 根据关键词搜索产品，仅模糊匹配 name 字段（商品名称）
+     * @param keyword 搜索关键词
+     * @return 匹配的产品列表
+     */
     @Override
     public List<Product> searchProducts(String keyword) {
-        // 构造查询条件
-        //QueryWrapper 是 MyBatis Plus 提供的一个工具类，用于构建 SQL 查询条件
+        // 关键词为空则返回空列表
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 创建查询条件，仅在 name 字段模糊匹配
         QueryWrapper<Product> queryWrapper = new QueryWrapper<>();
-        //创建了一个 QueryWrapper 对象，专门用于 Product 实体类。这个 queryWrapper 将用于添加查询条件。
-        queryWrapper.lambda() //lambda() 方法返回一个支持 Lambda 表达式的查询构造器。
-                // lambda() 方法返回一个支持 Lambda 表达式的查询构造器。
-                .like(Product::getName, keyword) //Product::getName 是一个方法引用，指向 Product 类中的 getName() 方法。 keyword 是希望匹配的字符串。
-                .or() //如果上一个条件（模糊匹配 name 字段）不满足，查询将继续检查下一个条件
-                .like(Product::getDescription, keyword); //匹配description字段，检查 Product 实体中 description 字段是否包含 keyword查 Product 实体中 description 字段是否包含 keyword，
+        queryWrapper.like("name", keyword.trim());
 
         // 执行查询
         List<Product> list = productMapper.selectList(queryWrapper);
-        setCoverImages(list); // 设置封面图
+
+        // 设置封面图（如果你有这个逻辑）
+        setCoverImages(list);
+
         return list;
     }
 
