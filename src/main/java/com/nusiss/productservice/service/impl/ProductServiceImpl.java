@@ -256,4 +256,26 @@ public class ProductServiceImpl implements ProductService {
             }
         }
     }
+
+    /*
+     对猜你喜欢推荐接口进行开发实现，用于MVP商品推荐。TODO:  待完善，之后引入完善的推荐系统
+     */
+    @Override
+    public List<Product> getRelatedProducts(Long productId, int limit) {
+        // Step 1: 查询当前商品
+        Product currentProduct = productMapper.selectById(productId);
+        if (currentProduct == null || currentProduct.getCategory() == null) {
+            return new ArrayList<>();
+        }
+
+        // Step 2: 查询同分类下的商品，排除当前商品，按评分降序排列
+        QueryWrapper<Product> query = new QueryWrapper<>();
+        query.eq("category", currentProduct.getCategory())
+                .ne("id", productId)
+                .orderByDesc("rating")
+                .last("LIMIT " + limit);
+
+        return productMapper.selectList(query);
+    }
+
 }

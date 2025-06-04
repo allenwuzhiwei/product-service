@@ -80,4 +80,12 @@ public interface ProductService {
             int page,
             int size
     );
+
+    /*
+     基础推荐功能：根据某个商品推荐同类商品
+     @param productId 当前浏览的商品 ID
+     @param limit 返回的商品数量
+     @return 推荐商品列表
+     */
+    List<Product> getRelatedProducts(Long productId, int limit);
 }

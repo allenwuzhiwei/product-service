@@ -164,5 +164,14 @@ public class ProductController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Products filtered successfully", products));
     }
 
+    /*
+     推荐接口：猜你喜欢（同分类热门商品）
+     */
+    @GetMapping("/recommend/related/{productId}")
+    public ResponseEntity<ApiResponse<List<Product>>> recommendRelatedProducts(@PathVariable Long productId) {
+        List<Product> recommended = productService.getRelatedProducts(productId, 5);
+        return ResponseEntity.ok(ApiResponse.success(recommended));
+    }
+
 
 }
