@@ -2,6 +2,7 @@ package com.nusiss.productservice.service.impl;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.nusiss.commonservice.feign.OrderFeignClient;
 import com.nusiss.productservice.dao.ProductMapper;
 import com.nusiss.productservice.dao.ProductMediaMapper;
 import com.nusiss.productservice.entity.Product;
@@ -14,14 +15,21 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.springframework.util.StringUtils;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductServiceImpl implements ProductService {
 
     @Autowired
     private ProductMapper productMapper;
+
+    @Autowired
+    private OrderFeignClient orderFeignClient;
+
 
     // 查询所有商品
     @Override
@@ -277,5 +285,40 @@ public class ProductServiceImpl implements ProductService {
 
         return productMapper.selectList(query);
     }
+
+
+    /*
+    对基于用户历史订单分类推荐商品接口进行开发实现，用于MVP商品推荐。TODO:  待完善，之后引入完善的推荐系统
+    */
+    @Override
+    public List<Product> getTopRecommendedProductsByUser(Long userId, int limit) {
+        // ✅ 直接拿到商品 ID 列表，不再封装在 ApiResponse 中
+        List<Long> purchasedProductIds = orderFeignClient.getProductIdsByUserId(userId);
+        if (purchasedProductIds == null || purchasedProductIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // Step 2: 查这些商品的分类
+        List<Product> purchasedProducts = productMapper.selectBatchIds(purchasedProductIds);
+
+        // Step 3: 统计分类，找出现最多的 Top1
+        Map<String, Long> categoryCount = purchasedProducts.stream()
+                .filter(p -> p.getCategory() != null)
+                .collect(Collectors.groupingBy(Product::getCategory, Collectors.counting()));
+
+        if (categoryCount.isEmpty()) return new ArrayList<>();
+
+        String topCategory = Collections.max(categoryCount.entrySet(), Map.Entry.comparingByValue()).getKey();
+
+        // Step 4: 查该分类下评分高商品，排除已买商品
+        QueryWrapper<Product> query = new QueryWrapper<>();
+        query.eq("category", topCategory)
+                .notIn("id", purchasedProductIds)
+                .orderByDesc("rating")
+                .last("LIMIT " + limit);
+
+        return productMapper.selectList(query);
+    }
+
 
 }

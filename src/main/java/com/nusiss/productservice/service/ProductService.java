@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.nusiss.productservice.entity.Product;
+
 import com.baomidou.mybatisplus.core.metadata.IPage;
 
 
@@ -88,4 +88,12 @@ public interface ProductService {
      @return 推荐商品列表
      */
     List<Product> getRelatedProducts(Long productId, int limit);
+
+
+    /*
+     基于用户历史订单分类推荐商品
+     @param userId 用户 ID
+     @param limit 返回的商品数量
+     */
+    List<Product> getTopRecommendedProductsByUser(Long userId, int limit);
 }

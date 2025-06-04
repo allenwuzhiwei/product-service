@@ -173,5 +173,15 @@ public class ProductController {
         return ResponseEntity.ok(ApiResponse.success(recommended));
     }
 
+    /*
+    推荐接口：热门商品推荐(基于用户购买过的商品)
+    */
+    @GetMapping("/recommend/user/{userId}/top")
+    public ResponseEntity<ApiResponse<List<Product>>> recommendByUserOrder(@PathVariable Long userId) {
+        List<Product> recommended = productService.getTopRecommendedProductsByUser(userId, 5);
+        return ResponseEntity.ok(ApiResponse.success(recommended));
+    }
+
+
 
 }
