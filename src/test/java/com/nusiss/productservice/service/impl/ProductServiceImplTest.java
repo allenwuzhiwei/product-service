@@ -2,6 +2,7 @@ package com.nusiss.productservice.service.impl;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.nusiss.commonservice.feign.OrderFeignClient;
 import com.nusiss.productservice.dao.ProductMapper;
 import com.nusiss.productservice.dao.ProductMediaMapper;
 import com.nusiss.productservice.entity.Product;
@@ -27,6 +28,9 @@ class ProductServiceImplTest {
 
     @Mock
     private ProductMediaMapper productMediaMapper;
+
+    @Mock
+    private OrderFeignClient orderFeignClient;
 
     @BeforeEach
     void setUp() {
@@ -175,6 +179,82 @@ class ProductServiceImplTest {
     @Test
     void testGetProductsPage_default() {
         assertDoesNotThrow(() -> productService.getAllProducts());
+    }
+
+    @Test
+    void testGetRelatedProducts() {
+        // 模拟商品本身
+        Product product = new Product();
+        product.setId(1L);
+        product.setCategory("Smartphones");
+
+        // 模拟推荐商品
+        Product p1 = new Product();
+        p1.setId(2L);
+        p1.setName("Phone A");
+        p1.setCategory("Smartphones");
+        p1.setPrice(new BigDecimal("2999"));
+        p1.setRating(4.8);
+
+        Product p2 = new Product();
+        p2.setId(3L);
+        p2.setName("Phone B");
+        p2.setCategory("Smartphones");
+        p2.setPrice(new BigDecimal("3999"));
+        p2.setRating(4.0);
+
+        List<Product> related = List.of(p1, p2);
+
+        // Mock 行为
+        when(productMapper.selectById(1L)).thenReturn(product);
+        when(productMapper.selectList(any())).thenReturn(related);
+
+        // 调用方法
+        List<Product> result = productService.getRelatedProducts(1L, 5);
+
+        // 断言
+        assertEquals(2, result.size());
+        assertEquals("Phone A", result.get(0).getName());
+    }
+
+    @Test
+    void testGetTopRecommendedProductsByUser() {
+        Long userId = 1L;
+        List<Long> purchasedIds = List.of(1L, 3L, 5L);
+
+        Product p1 = new Product();
+        p1.setId(1L);
+        p1.setCategory("Smartphones");
+        p1.setRating(4.5);
+
+        Product p2 = new Product();
+        p2.setId(3L);
+        p2.setCategory("Smartphones");
+        p2.setRating(4.0);
+
+        Product p3 = new Product();
+        p3.setId(5L);
+        p3.setCategory("Laptops");
+        p3.setRating(4.8);
+
+        List<Product> purchasedProducts = List.of(p1, p2, p3);
+
+        Product rec = new Product();
+        rec.setId(7L);
+        rec.setName("New Phone");
+        rec.setCategory("Smartphones");
+        rec.setRating(4.9);
+
+        List<Product> recommended = List.of(rec);
+
+        when(orderFeignClient.getProductIdsByUserId(userId)).thenReturn(purchasedIds);
+        when(productMapper.selectBatchIds(purchasedIds)).thenReturn(purchasedProducts);
+        when(productMapper.selectList(any())).thenReturn(recommended);
+
+        List<Product> result = productService.getTopRecommendedProductsByUser(userId, 5);
+
+        assertEquals(1, result.size());
+        assertEquals("New Phone", result.get(0).getName());
     }
 
 }
