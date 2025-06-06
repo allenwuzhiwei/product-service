@@ -283,7 +283,9 @@ public class ProductServiceImpl implements ProductService {
                 .orderByDesc("rating")
                 .last("LIMIT " + limit);
 
-        return productMapper.selectList(query);
+        List<Product> products = productMapper.selectList(query);
+        setCoverImages(products); // 设置封面图
+        return products;
     }
 
 
@@ -292,7 +294,7 @@ public class ProductServiceImpl implements ProductService {
     */
     @Override
     public List<Product> getTopRecommendedProductsByUser(Long userId, int limit) {
-        // ✅ 直接拿到商品 ID 列表，不再封装在 ApiResponse 中
+        // 直接拿到商品 ID 列表，不再封装在 ApiResponse 中
         List<Long> purchasedProductIds = orderFeignClient.getProductIdsByUserId(userId);
         if (purchasedProductIds == null || purchasedProductIds.isEmpty()) {
             return new ArrayList<>();
@@ -317,7 +319,9 @@ public class ProductServiceImpl implements ProductService {
                 .orderByDesc("rating")
                 .last("LIMIT " + limit);
 
-        return productMapper.selectList(query);
+        List<Product> recommended = productMapper.selectList(query);
+        setCoverImages(recommended); // 设置封面图
+        return recommended;
     }
 
 
