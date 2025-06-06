@@ -172,7 +172,7 @@ class ProductServiceImplTest {
 
         Product result = productService.getProductById(1L);
 
-        assertEquals("http://example.com/img.jpg", result.getCoverImageUrl()); // ✅ 测试实际结果
+        assertEquals("http://example.com/img.jpg", result.getCoverImageUrl()); // 测试实际结果
     }
 
 
@@ -183,12 +183,12 @@ class ProductServiceImplTest {
 
     @Test
     void testGetRelatedProducts() {
-        // 模拟商品本身
+        // 模拟当前商品
         Product product = new Product();
         product.setId(1L);
         product.setCategory("Smartphones");
 
-        // 模拟推荐商品
+        // 模拟推荐商品列表
         Product p1 = new Product();
         p1.setId(2L);
         p1.setName("Phone A");
@@ -205,9 +205,14 @@ class ProductServiceImplTest {
 
         List<Product> related = List.of(p1, p2);
 
+        // 模拟封面图
+        ProductMedia media = new ProductMedia();
+        media.setUrl("http://example.com/cover1.jpg");
+
         // Mock 行为
         when(productMapper.selectById(1L)).thenReturn(product);
         when(productMapper.selectList(any())).thenReturn(related);
+        when(productMediaMapper.selectOne(any())).thenReturn(media);
 
         // 调用方法
         List<Product> result = productService.getRelatedProducts(1L, 5);
@@ -215,6 +220,7 @@ class ProductServiceImplTest {
         // 断言
         assertEquals(2, result.size());
         assertEquals("Phone A", result.get(0).getName());
+        assertEquals("http://example.com/cover1.jpg", result.get(0).getCoverImageUrl());
     }
 
     @Test
@@ -222,6 +228,7 @@ class ProductServiceImplTest {
         Long userId = 1L;
         List<Long> purchasedIds = List.of(1L, 3L, 5L);
 
+        // 模拟购买过的商品
         Product p1 = new Product();
         p1.setId(1L);
         p1.setCategory("Smartphones");
@@ -239,6 +246,7 @@ class ProductServiceImplTest {
 
         List<Product> purchasedProducts = List.of(p1, p2, p3);
 
+        // 模拟推荐商品
         Product rec = new Product();
         rec.setId(7L);
         rec.setName("New Phone");
@@ -247,14 +255,24 @@ class ProductServiceImplTest {
 
         List<Product> recommended = List.of(rec);
 
+        // 模拟封面图
+        ProductMedia media = new ProductMedia();
+        media.setUrl("http://example.com/newphone.jpg");
+
+        // Mock 行为
         when(orderFeignClient.getProductIdsByUserId(userId)).thenReturn(purchasedIds);
         when(productMapper.selectBatchIds(purchasedIds)).thenReturn(purchasedProducts);
         when(productMapper.selectList(any())).thenReturn(recommended);
+        when(productMediaMapper.selectOne(any())).thenReturn(media);
 
+        // 调用方法
         List<Product> result = productService.getTopRecommendedProductsByUser(userId, 5);
 
+        // 断言
         assertEquals(1, result.size());
         assertEquals("New Phone", result.get(0).getName());
+        assertEquals("http://example.com/newphone.jpg", result.get(0).getCoverImageUrl());
     }
+
 
 }
