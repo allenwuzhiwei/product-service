@@ -2,6 +2,7 @@ package com.nusiss.productservice.service.impl;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.nusiss.commonservice.feign.OrderFeignClient;
 import com.nusiss.productservice.dao.ProductMapper;
 import com.nusiss.productservice.dao.ProductMediaMapper;
 import com.nusiss.productservice.entity.Product;
@@ -13,15 +14,22 @@ import org.springframework.stereotype.Service;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.springframework.util.StringUtils;
-
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductServiceImpl implements ProductService {
 
     @Autowired
     private ProductMapper productMapper;
+
+    @Autowired
+    private OrderFeignClient orderFeignClient;
+
 
     // 查询所有商品
     @Override
@@ -88,21 +96,28 @@ public class ProductServiceImpl implements ProductService {
      @return 匹配的产品列表
      */
 
+    /**
+     * 根据关键词搜索产品，仅模糊匹配 name 字段（商品名称）
+     * @param keyword 搜索关键词
+     * @return 匹配的产品列表
+     */
     @Override
     public List<Product> searchProducts(String keyword) {
-        // 构造查询条件
-        //QueryWrapper 是 MyBatis Plus 提供的一个工具类，用于构建 SQL 查询条件
+        // 关键词为空则返回空列表
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 创建查询条件，仅在 name 字段模糊匹配
         QueryWrapper<Product> queryWrapper = new QueryWrapper<>();
-        //创建了一个 QueryWrapper 对象，专门用于 Product 实体类。这个 queryWrapper 将用于添加查询条件。
-        queryWrapper.lambda() //lambda() 方法返回一个支持 Lambda 表达式的查询构造器。
-                // lambda() 方法返回一个支持 Lambda 表达式的查询构造器。
-                .like(Product::getName, keyword) //Product::getName 是一个方法引用，指向 Product 类中的 getName() 方法。 keyword 是希望匹配的字符串。
-                .or() //如果上一个条件（模糊匹配 name 字段）不满足，查询将继续检查下一个条件
-                .like(Product::getDescription, keyword); //匹配description字段，检查 Product 实体中 description 字段是否包含 keyword查 Product 实体中 description 字段是否包含 keyword，
+        queryWrapper.like("name", keyword.trim());
 
         // 执行查询
         List<Product> list = productMapper.selectList(queryWrapper);
-        setCoverImages(list); // 设置封面图
+
+        // 设置封面图（如果你有这个逻辑）
+        setCoverImages(list);
+
         return list;
     }
 
@@ -249,4 +264,65 @@ public class ProductServiceImpl implements ProductService {
             }
         }
     }
+
+    /*
+     对猜你喜欢推荐接口进行开发实现，用于MVP商品推荐。TODO:  待完善，之后引入完善的推荐系统
+     */
+    @Override
+    public List<Product> getRelatedProducts(Long productId, int limit) {
+        // Step 1: 查询当前商品
+        Product currentProduct = productMapper.selectById(productId);
+        if (currentProduct == null || currentProduct.getCategory() == null) {
+            return new ArrayList<>();
+        }
+
+        // Step 2: 查询同分类下的商品，排除当前商品，按评分降序排列
+        QueryWrapper<Product> query = new QueryWrapper<>();
+        query.eq("category", currentProduct.getCategory())
+                .ne("id", productId)
+                .orderByDesc("rating")
+                .last("LIMIT " + limit);
+
+        List<Product> products = productMapper.selectList(query);
+        setCoverImages(products); // 设置封面图
+        return products;
+    }
+
+
+    /*
+    对基于用户历史订单分类推荐商品接口进行开发实现，用于MVP商品推荐。TODO:  待完善，之后引入完善的推荐系统
+    */
+    @Override
+    public List<Product> getTopRecommendedProductsByUser(Long userId, int limit) {
+        // 直接拿到商品 ID 列表，不再封装在 ApiResponse 中
+        List<Long> purchasedProductIds = orderFeignClient.getProductIdsByUserId(userId);
+        if (purchasedProductIds == null || purchasedProductIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // Step 2: 查这些商品的分类
+        List<Product> purchasedProducts = productMapper.selectBatchIds(purchasedProductIds);
+
+        // Step 3: 统计分类，找出现最多的 Top1
+        Map<String, Long> categoryCount = purchasedProducts.stream()
+                .filter(p -> p.getCategory() != null)
+                .collect(Collectors.groupingBy(Product::getCategory, Collectors.counting()));
+
+        if (categoryCount.isEmpty()) return new ArrayList<>();
+
+        String topCategory = Collections.max(categoryCount.entrySet(), Map.Entry.comparingByValue()).getKey();
+
+        // Step 4: 查该分类下评分高商品，排除已买商品
+        QueryWrapper<Product> query = new QueryWrapper<>();
+        query.eq("category", topCategory)
+                .notIn("id", purchasedProductIds)
+                .orderByDesc("rating")
+                .last("LIMIT " + limit);
+
+        List<Product> recommended = productMapper.selectList(query);
+        setCoverImages(recommended); // 设置封面图
+        return recommended;
+    }
+
+
 }

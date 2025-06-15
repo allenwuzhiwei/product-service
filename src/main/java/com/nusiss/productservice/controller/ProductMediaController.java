@@ -6,10 +6,14 @@ import com.nusiss.productservice.entity.ProductMedia;
 import com.nusiss.productservice.service.ProductMediaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ClassPathResource;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 import java.io.File;
 import java.time.LocalDateTime;
@@ -22,6 +26,9 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/media")
 public class ProductMediaController {
+
+    //  创建日志记录器
+    private static final Logger logger = LoggerFactory.getLogger(ProductMediaController.class);
 
     /*
     注入 ProductMapper，用于检查productId是否存在
@@ -53,7 +60,11 @@ public class ProductMediaController {
 
             // Step 2: 保存文件到resource文件夹下面的upload file目录中
             String originalFilename = file.getOriginalFilename();
+            if (originalFilename == null || !originalFilename.contains(".")) {
+                return ApiResponse.fail("上传失败：文件名为空或格式不合法");
+            }
             String suffix = originalFilename.substring(originalFilename.lastIndexOf("."));
+
             String newFileName = UUID.randomUUID().toString() + suffix;
 
             // 使用项目路径拼接保存目录
@@ -79,10 +90,12 @@ public class ProductMediaController {
             productMediaService.createProductMedia(media);
 
             return ApiResponse.success(media);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ApiResponse.fail("文件上传或保存失败：" + e.getMessage());
         }
+        catch (Exception e) {
+            logger.error("xxx失败", e);
+            return ApiResponse.fail("xxx失败：" + e.getMessage());
+        }
+
     }
 
 
@@ -158,12 +171,19 @@ public class ProductMediaController {
             String oldFilePath = projectRoot + "/src/main/resources/static/uploadFile/" + oldFileName;
             File oldFile = new File(oldFilePath);
             if (oldFile.exists()) {
-                oldFile.delete();
+                boolean deleted = oldFile.delete();
+                if (!deleted) {
+                    return ApiResponse.fail("删除旧图片文件失败");
+                }
             }
 
             // 3. 保存新文件
             String originalName = file.getOriginalFilename();
+            if (originalName == null || !originalName.contains(".")) {
+                return ApiResponse.fail("上传失败：文件名为空或格式不合法");
+            }
             String suffix = originalName.substring(originalName.lastIndexOf("."));
+
             String newFileName = UUID.randomUUID().toString() + suffix;
             String uploadDir = projectRoot + "/src/main/resources/static/uploadFile";
             File dest = new File(uploadDir, newFileName);
@@ -181,8 +201,9 @@ public class ProductMediaController {
             } else {
                 return ApiResponse.fail("数据库更新失败");
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        }
+        catch (Exception e) {
+            logger.error("替换图片失败", e);
             return ApiResponse.fail("替换图片失败：" + e.getMessage());
         }
     }

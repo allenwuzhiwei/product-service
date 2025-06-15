@@ -92,16 +92,17 @@ public class ProductController {
     }
 
     /*
-    扩展功能2 接口：关键词搜索产品接口
-    支持根据产品名称或描述进行模糊搜索
-    @param keyword 关键词
-    @return 匹配的产品列表
+     扩展功能2 接口：关键词搜索产品接口
+     仅支持根据产品名称（name）字段进行模糊搜索
+     @param keyword 关键词（用于模糊匹配产品名称）
+     @return 匹配的产品列表
      */
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<List<Product>>> searchProducts(@RequestParam String keyword) {
         List<Product> result = productService.searchProducts(keyword); // 调用 service 进行搜索
         return ResponseEntity.ok(new ApiResponse<>(true, "Products matched successfully", result));
     }
+
 
     /*
     扩展功能3 接口：多条件筛选产品接口(筛选支持单条件筛选，或者组合条件筛选)
@@ -162,6 +163,25 @@ public class ProductController {
 
         return ResponseEntity.ok(new ApiResponse<>(true, "Products filtered successfully", products));
     }
+
+    /*
+     推荐接口：猜你喜欢（同分类热门商品）
+     */
+    @GetMapping("/recommend/related/{productId}")
+    public ResponseEntity<ApiResponse<List<Product>>> recommendRelatedProducts(@PathVariable Long productId) {
+        List<Product> recommended = productService.getRelatedProducts(productId, 5);
+        return ResponseEntity.ok(ApiResponse.success(recommended));
+    }
+
+    /*
+    推荐接口：热门商品推荐(基于用户购买过的商品)
+    */
+    @GetMapping("/recommend/user/{userId}/top")
+    public ResponseEntity<ApiResponse<List<Product>>> recommendByUserOrder(@PathVariable Long userId) {
+        List<Product> recommended = productService.getTopRecommendedProductsByUser(userId, 5);
+        return ResponseEntity.ok(ApiResponse.success(recommended));
+    }
+
 
 
 }
